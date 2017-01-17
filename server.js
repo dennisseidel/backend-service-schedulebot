@@ -20,6 +20,10 @@ io.on('connection', (socket) => {
       message: `This is a test answer for: ${from}'s message: ${msg.text}`,
     });
   });
+
+  socket.on('disconnect', () => {
+    io.emit('user disconnected');
+  });
 });
 
 server.listen(port, (err) => {
