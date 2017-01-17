@@ -9,10 +9,12 @@ const io = socket(server);
 
 io.on('connection', (socket) => {
   console.log('a user connected');
-
   io.emit('bot-message', {
     type: 'bot',
     message: 'Hi, what can I do for you?',
+  });
+  socket.on('chat-input', (from, msg) => {
+    console.log('I received a private message by ', from, ' saying ', msg);
   });
 });
 
