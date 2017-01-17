@@ -15,6 +15,10 @@ io.on('connection', (socket) => {
   });
   socket.on('chat-input', (from, msg) => {
     console.log('I received a private message by ', from, ' saying ', msg);
+    socket.emit('bot-message', {
+      type: 'bot',
+      message: `This is a test answer for: ${from}'s message: ${msg.text}`,
+    });
   });
 });
 
