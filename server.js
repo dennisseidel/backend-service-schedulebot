@@ -2,7 +2,12 @@ const express = require('express');
 const { Server } = require('http');
 const socket = require('socket.io');
 const Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
+const axios = require('axios');
+const _ = require('lodash');
+const moment = require('moment');
+const { findTodaysCalenderEntry, findNextFreeTimeSlot } = require('./modules/calender');
 
+const today = moment().format('YYYY-MM-DD');
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -25,13 +30,14 @@ io.on('connection', (socket) => {
   console.log('a user connected');
   // initialize bot context for user and Replace with the context obtained from the initial request
   let context = {};
+
   io.emit('bot-message', {
     role: 'bot',
     text: 'Hi, what can I do for you?',
     timestamp: Date.now(),
   });
+
   socket.on('chat-input', (from, msg) => {
-    console.log('I received a private message by ', from, ' saying ', msg);
     // Start conversation with empty message.
     conversation.message(
       {
@@ -43,17 +49,47 @@ io.on('connection', (socket) => {
         console.error(err); // something went wrong
         return;
       }
-
       // Display the output from dialog, if any.
       if (response.output.text.length != 0) {
-        console.log(response.output);
         context = response.context;
-        console.log('! RESPONSE:', response);
-        io.emit('bot-message', {
-          role: 'bot',
-          text: response.output.text[0],
-          timestamp: Date.now(),
-        });
+        let responseText = response.output.text[0];
+        // call function that finds open keywords
+        if (/\$\[/.test(responseText)) {
+          // TODO get the customernumber dynamically from client
+          const mockCustomerNumber = '5884cace0de4b4642da047dc';
+          // customernumber -> ask for responsible agent
+          axios.get(`http://localhost:3002/customers/${mockCustomerNumber}`)
+          .then((resCustomer) => {
+            const responsibleAgentId = resCustomer.data.customer.centralagentid;
+            // agendid -> find the right time for the responsible agent
+            axios.get(`http://localhost:3001/employees/${responsibleAgentId}`)
+            .then((employeeRes) => {
+              const employee = employeeRes.data.employee;
+              // console.log('EMPLOYEE:', JSON.stringify(employee));
+              responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
+              // compute next free meeting time
+              let nextFreeMeetingTime;
+              // find todays slot in employee calender with all meetings after
+              // if undefined give a meeting now
+              if (typeof employee.nonAvailablility === 'undefined') {
+                // TODO create termin in the employee calender now
+                nextFreeMeetingTime = moment();
+              } else {
+                // with end date after now
+                nextFreeMeetingTime = findNextFreeTimeSlot(employee.nonAvailablility[0][today]);
+              }
+              // schedule meeting by proposing time to user
+              responseText = responseText
+                             .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}`)
+                             .replace(/\$\[call_time\]/i, `${nextFreeMeetingTime.get('hours')}:${nextFreeMeetingTime.get('minutes')}`);
+              io.emit('bot-message', {
+                role: 'bot',
+                text: responseText,
+                timestamp: Date.now(),
+              });
+            });
+          });
+        }
       }
     });
   });
