@@ -3,11 +3,8 @@ const { Server } = require('http');
 const socket = require('socket.io');
 const Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
 const axios = require('axios');
-const _ = require('lodash');
 const moment = require('moment');
-const { findTodaysCalenderEntry, findNextFreeTimeSlot } = require('./modules/calender');
-
-const today = moment().format('YYYY-MM-DD');
+const { findNextFreeTimeSlot } = require('./modules/calender');
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -65,18 +62,26 @@ io.on('connection', (socket) => {
             axios.get(`http://localhost:3001/employees/${responsibleAgentId}`)
             .then((employeeRes) => {
               const employee = employeeRes.data.employee;
-              // console.log('EMPLOYEE:', JSON.stringify(employee));
               responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
               // compute next free meeting time
               let nextFreeMeetingTime;
               // find todays slot in employee calender with all meetings after
               // if undefined give a meeting now
               if (typeof employee.nonAvailablility === 'undefined') {
-                // TODO create termin in the employee calender now
                 nextFreeMeetingTime = moment();
+                axios.patch(`http://localhost:3001/employees/${responsibleAgentId}/termin`, {
+                  todo: 'fill with something',
+                  start: nextFreeMeetingTime,
+                  end: nextFreeMeetingTime.clone().add(30, 'm'),
+                });
               } else {
                 // with end date after now
-                nextFreeMeetingTime = findNextFreeTimeSlot(employee.nonAvailablility[0][today]);
+                nextFreeMeetingTime = findNextFreeTimeSlot(employee.nonAvailablility);
+                axios.patch(`http://localhost:3001/employees/${responsibleAgentId}/termin`, {
+                  todo: 'fill with something',
+                  start: nextFreeMeetingTime,
+                  end: nextFreeMeetingTime.clone().add(30, 'm'),
+                }).catch(error => console.log('Error:', error));
               }
               // schedule meeting by proposing time to user
               responseText = responseText
