@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
         let responseText = response.output.text[0];
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
-          // TODO get the customernumber dynamically from client
+          // TODO get the customernumber dynamically from client (and instert it in the function that is called based on the keyword [call_date])
           const mockCustomerNumber = '5884cace0de4b4642da047dc';
           // customernumber -> ask for responsible agent
           axios.get(`http://localhost:3002/customers/${mockCustomerNumber}`)
@@ -83,9 +83,14 @@ io.on('connection', (socket) => {
                   end: nextFreeMeetingTime.clone().add(30, 'm'),
                 }).catch(error => console.log('Error:', error));
               }
+
+
+              if (/\$\[reschedule_call_date\]/i.test(responseText)) {
+                console.log('get the old time, slice the calender with old time + 1 day or some setoff provided by the user');
+              }
               // schedule meeting by proposing time to user
               responseText = responseText
-                             .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}`)
+                             .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}.${nextFreeMeetingTime.get('year')}`)
                              .replace(/\$\[call_time\]/i, `${nextFreeMeetingTime.get('hours')}:${nextFreeMeetingTime.get('minutes')}`);
               io.emit('bot-message', {
                 role: 'bot',
