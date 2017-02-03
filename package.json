@@ -4,6 +4,7 @@
   "description": "This service offers an endpoint to the bot via socket.io",
   "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js"
   },
@@ -30,5 +31,8 @@
     "moment": "^2.17.1",
     "socket.io": "^1.7.2",
     "watson-developer-cloud": "^2.15.2"
+  },
+  "engines": {
+    "node": "7.4.0"
   }
 }
