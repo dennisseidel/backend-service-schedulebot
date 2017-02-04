@@ -10,6 +10,8 @@ const port = process.env.PORT || 3000;
 const app = express();
 const server = Server(app);
 const io = socket(server);
+const CUSTOMER_ROOT_URL = process.env.CUSTOMER_ROOT_URL || 'http://localhost:3002';
+const EMPLOYEE_ROOT_URL = process.env.EMPLOYEE_ROOT_URL || 'http://localhost:3001';
 
 // Create the service wrapper
 const conversation = new Conversation({
@@ -55,11 +57,11 @@ io.on('connection', (socket) => {
           // TODO get the customernumber dynamically from client (and instert it in the function that is called based on the keyword [call_date])
           const mockCustomerNumber = '5884cace0de4b4642da047dc';
           // customernumber -> ask for responsible agent
-          axios.get(`http://localhost:3002/customers/${mockCustomerNumber}`)
+          axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
           .then((resCustomer) => {
             const responsibleAgentId = resCustomer.data.customer.centralagentid;
             // agendid -> find the right time for the responsible agent
-            axios.get(`http://localhost:3001/employees/${responsibleAgentId}`)
+            axios.get(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}`)
             .then((employeeRes) => {
               const employee = employeeRes.data.employee;
               responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
@@ -69,7 +71,7 @@ io.on('connection', (socket) => {
               // if undefined give a meeting now
               if (typeof employee.nonAvailablility === 'undefined') {
                 nextFreeMeetingTime = moment();
-                axios.patch(`http://localhost:3001/employees/${responsibleAgentId}/termin`, {
+                axios.patch(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}/termin`, {
                   todo: 'fill with something',
                   start: nextFreeMeetingTime,
                   end: nextFreeMeetingTime.clone().add(30, 'm'),
@@ -77,7 +79,7 @@ io.on('connection', (socket) => {
               } else {
                 // with end date after now
                 nextFreeMeetingTime = findNextFreeTimeSlot(employee.nonAvailablility);
-                axios.patch(`http://localhost:3001/employees/${responsibleAgentId}/termin`, {
+                axios.patch(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}/termin`, {
                   todo: 'fill with something',
                   start: nextFreeMeetingTime,
                   end: nextFreeMeetingTime.clone().add(30, 'm'),
