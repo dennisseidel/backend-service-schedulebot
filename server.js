@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
   console.log('a user connected');
   // initialize bot context for user and Replace with the context obtained from the initial request
   let context = {};
+  let responseText = '';
 
   io.emit('bot-message', {
     role: 'bot',
@@ -51,7 +52,7 @@ io.on('connection', (socket) => {
       // Display the output from dialog, if any.
       if (response.output.text.length != 0) {
         context = response.context;
-        let responseText = response.output.text[0];
+        responseText = response.output.text[0];
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
           // TODO get the customernumber dynamically from client (and instert it in the function that is called based on the keyword [call_date])
