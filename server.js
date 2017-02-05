@@ -60,22 +60,10 @@ io.on('connection', (socket) => {
           // customernumber -> ask for responsible agent
           axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
           .then((resCustomer) => {
-            console.log('CUSTOMER OBJECT:', resCustomer);
-            io.emit('bot-message', {
-              role: 'bot',
-              text: 'CUSTOMER OBJECT:',
-              timestamp: Date.now(),
-            });
             const responsibleAgentId = resCustomer.data.customer.centralagentid;
             // agendid -> find the right time for the responsible agent
             axios.get(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}`)
             .then((employeeRes) => {
-              console.log('EMPLOYEE OBJECT:', employeeRes);
-              io.emit('bot-message', {
-                role: 'bot',
-                text: 'EMPLOYEE OBJECT:',
-                timestamp: Date.now(),
-              });
               const employee = employeeRes.data.employee;
               responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
               // compute next free meeting time
@@ -107,14 +95,14 @@ io.on('connection', (socket) => {
               responseText = responseText
                              .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}.${nextFreeMeetingTime.get('year')}`)
                              .replace(/\$\[call_time\]/i, `${nextFreeMeetingTime.get('hours')}:${nextFreeMeetingTime.get('minutes')}`);
+              io.emit('bot-message', {
+                role: 'bot',
+                text: responseText,
+                timestamp: Date.now(),
+              });
             });
           })
           .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
-          io.emit('bot-message', {
-            role: 'bot',
-            text: responseText,
-            timestamp: Date.now(),
-          });
         } else {
           io.emit('bot-message', {
             role: 'bot',
