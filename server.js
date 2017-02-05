@@ -48,11 +48,6 @@ io.on('connection', (socket) => {
         console.error(err); // something went wrong
         return;
       }
-      io.emit('bot-message', {
-        role: 'bot',
-        text: response,
-        timestamp: Date.now(),
-      });
       // Display the output from dialog, if any.
       if (response.output.text.length != 0) {
         context = response.context;
@@ -101,15 +96,15 @@ io.on('connection', (socket) => {
               responseText = responseText
                              .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}.${nextFreeMeetingTime.get('year')}`)
                              .replace(/\$\[call_time\]/i, `${nextFreeMeetingTime.get('hours')}:${nextFreeMeetingTime.get('minutes')}`);
-              io.emit('bot-message', {
-                role: 'bot',
-                text: responseText,
-                timestamp: Date.now(),
-              });
             });
           })
           .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
         }
+        io.emit('bot-message', {
+          role: 'bot',
+          text: responseText,
+          timestamp: Date.now(),
+        });
       }
     });
   });
