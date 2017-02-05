@@ -107,7 +107,8 @@ io.on('connection', (socket) => {
                 timestamp: Date.now(),
               });
             });
-          });
+          })
+          .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
         }
       }
     });
