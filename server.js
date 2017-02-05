@@ -60,11 +60,21 @@ io.on('connection', (socket) => {
           axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
           .then((resCustomer) => {
             console.log('CUSTOMER OBJECT:', resCustomer);
+            io.emit('bot-message', {
+              role: 'bot',
+              text: 'CUSTOMER OBJECT:',
+              timestamp: Date.now(),
+            });
             const responsibleAgentId = resCustomer.data.customer.centralagentid;
             // agendid -> find the right time for the responsible agent
             axios.get(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}`)
             .then((employeeRes) => {
               console.log('EMPLOYEE OBJECT:', employeeRes);
+              io.emit('bot-message', {
+                role: 'bot',
+                text: 'EMPLOYEE OBJECT:',
+                timestamp: Date.now(),
+              });
               const employee = employeeRes.data.employee;
               responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
               // compute next free meeting time
