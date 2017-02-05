@@ -110,12 +110,18 @@ io.on('connection', (socket) => {
             });
           })
           .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
+          io.emit('bot-message', {
+            role: 'bot',
+            text: responseText,
+            timestamp: Date.now(),
+          });
+        } else {
+          io.emit('bot-message', {
+            role: 'bot',
+            text: responseText,
+            timestamp: Date.now(),
+          });
         }
-        io.emit('bot-message', {
-          role: 'bot',
-          text: responseText,
-          timestamp: Date.now(),
-        });
       }
     });
   });
