@@ -59,10 +59,12 @@ io.on('connection', (socket) => {
           // customernumber -> ask for responsible agent
           axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
           .then((resCustomer) => {
+            console.log('CUSTOMER OBJECT:', resCustomer);
             const responsibleAgentId = resCustomer.data.customer.centralagentid;
             // agendid -> find the right time for the responsible agent
             axios.get(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}`)
             .then((employeeRes) => {
+              console.log('EMPLOYEE OBJECT:', employeeRes);
               const employee = employeeRes.data.employee;
               responseText = responseText.replace(/\$\[call_agent\]/i, employee.name);
               // compute next free meeting time
