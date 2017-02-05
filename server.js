@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
           // TODO get the customernumber dynamically from client (and instert it in the function that is called based on the keyword [call_date])
-          const mockCustomerNumber = '5884cace0de4b4642da047dc';
+          const mockCustomerNumber = '5894ec04d3ab69003a98e746';
           // customernumber -> ask for responsible agent
           axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
           .then((resCustomer) => {
