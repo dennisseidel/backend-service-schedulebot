@@ -38,11 +38,6 @@ io.on('connection', (socket) => {
 
   socket.on('chat-input', (from, msg) => {
     // Start conversation with empty message.
-    io.emit('bot-message', {
-      role: 'bot',
-      text: 'responseText',
-      timestamp: Date.now(),
-    });
     conversation.message(
       {
         workspace_id: 'fb7bb377-e523-439a-88fd-dd1ac0db1dc7',
@@ -53,6 +48,11 @@ io.on('connection', (socket) => {
         console.error(err); // something went wrong
         return;
       }
+      io.emit('bot-message', {
+        role: 'bot',
+        text: response,
+        timestamp: Date.now(),
+      });
       // Display the output from dialog, if any.
       if (response.output.text.length != 0) {
         context = response.context;
