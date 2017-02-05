@@ -38,6 +38,11 @@ io.on('connection', (socket) => {
 
   socket.on('chat-input', (from, msg) => {
     // Start conversation with empty message.
+    io.emit('bot-message', {
+      role: 'bot',
+      text: 'responseText',
+      timestamp: Date.now(),
+    });
     conversation.message(
       {
         workspace_id: 'fb7bb377-e523-439a-88fd-dd1ac0db1dc7',
