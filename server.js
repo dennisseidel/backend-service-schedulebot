@@ -4,6 +4,10 @@ const socket = require('socket.io');
 const Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
 const axios = require('axios');
 const moment = require('moment');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const watson = require('watson-developer-cloud');
+const cors = require('cors');
 const { findNextFreeTimeSlot } = require('./modules/calender');
 
 const port = process.env.PORT || 3000;
@@ -13,9 +17,37 @@ const io = socket(server);
 const CUSTOMER_ROOT_URL = process.env.CUSTOMER_ROOT_URL || 'http://localhost:3002';
 const EMPLOYEE_ROOT_URL = process.env.EMPLOYEE_ROOT_URL || 'http://localhost:3001';
 
+app.use(bodyParser.json());
+app.use(morgan('combined'));
+app.use(cors());
+
+
+const stt = new watson.SpeechToTextV1({
+  // if left undefined, username and password to fall back to the SPEECH_TO_TEXT_USERNAME and
+  // SPEECH_TO_TEXT_PASSWORD environment properties, and then to VCAP_SERVICES (on Bluemix)
+  username: 'ab2440d0-ce90-4215-ad72-adbb5df739c0',
+  password: 'svK22MIcIDS0',
+});
+const authService = new watson.AuthorizationV1(stt.getCredentials());
+
+
+// Endpoint to retrieve an watson speech to text api token
+// Get token using your credentials
+app.get('/watsoncloud/stt/token', (req, res, next) => {
+  // TODO check jwt at the auth service
+  authService.getToken((err, token) => {
+    if (err) {
+      next(err);
+    } else {
+      res.send({ token });
+    }
+  });
+});
+
 // Create the service wrapper
 const conversation = new Conversation({
-  // If unspecified here, the CONVERSATION_USERNAME and CONVERSATION_PASSWORD env properties will be checked
+  // If unspecified here, the CONVERSATION_USERNAME and CONVERSATION_PASSWORD
+  // env properties will be checked
   // After that, the SDK will fall back to the bluemix-provided VCAP_SERVICES environment property
   username: 'a7a8383d-f647-4f2c-bf10-875c77b693ba',
   password: 'NrsIkzic40Fo',
@@ -50,12 +82,13 @@ io.on('connection', (socket) => {
         return;
       }
       // Display the output from dialog, if any.
-      if (response.output.text.length != 0) {
+      if (response.output.text.length !== 0) {
         context = response.context;
         responseText = response.output.text[0];
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
-          // TODO get the customernumber dynamically from client (and instert it in the function that is called based on the keyword [call_date])
+          // TODO get the customernumber dynamically from client (and instert
+          // it in the function that is called based on the keyword [call_date])
           const mockCustomerNumber = '5894ec04d3ab69003a98e746';
           // customernumber -> ask for responsible agent
           axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
