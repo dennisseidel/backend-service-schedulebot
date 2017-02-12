@@ -22,10 +22,28 @@ app.use(morgan('combined'));
 app.use(cors());
 
 
+// Endpoint to retrieve an watson speech to text api token
+// Get token using your credentials
+const tts = new watson.TextToSpeechV1({
+  username: '5d466aae-55be-4fae-9443-84d29d3bc8e5',
+  password: 'Re4D00SKaIhk',
+});
+const authServiceTTS = new watson.AuthorizationV1(tts.getCredentials());
+app.get('/watsoncloud/tts/token', (req, res, next) => {
+  // TODO check jwt at the auth service
+  authServiceTTS.getToken((err, token) => {
+    if (err) {
+      next(err);
+    } else {
+      res.send({ token });
+    }
+  });
+});
+
 const stt = new watson.SpeechToTextV1({
   // if left undefined, username and password to fall back to the SPEECH_TO_TEXT_USERNAME and
   // SPEECH_TO_TEXT_PASSWORD environment properties, and then to VCAP_SERVICES (on Bluemix)
-  username: 'ab2440d0-ce90-4215-ad72-adbb5df739c0',
+  username: 'ab2440d-ce90-4215-ad72-adbb5df739c0',
   password: 'svK22MIcIDS0',
 });
 const authService = new watson.AuthorizationV1(stt.getCredentials());
