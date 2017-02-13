@@ -65,8 +65,8 @@ const conversation = new Conversation({
   // If unspecified here, the CONVERSATION_USERNAME and CONVERSATION_PASSWORD
   // env properties will be checked
   // After that, the SDK will fall back to the bluemix-provided VCAP_SERVICES environment property
-  username: 'a7a8383d-f647-4f2c-bf10-875c77b693ba',
-  password: 'NrsIkzic40Fo',
+  username: process.env.CONVERSATION_SERVICE_USER,
+  password: process.env.CONVERSATION_SERVICE_PW,
   url: 'https://gateway.watsonplatform.net/conversation/api',
   // path: { workspace_id: 'fb7bb377-e523-439a-88fd-dd1ac0db1dc7' },
   version_date: '2016-12-29',
