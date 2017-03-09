@@ -15,7 +15,7 @@
       "type": "node",
       "request": "attach",
       "name": "Attach to Process",
-      "port": 3000
+      "port": 23100
     }
   ]
 }
