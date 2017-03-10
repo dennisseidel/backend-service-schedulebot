@@ -41,8 +41,6 @@ app.get('/watsoncloud/tts/token', (req, res, next) => {
 });
 
 const stt = new watson.SpeechToTextV1({
-  // if left undefined, username and password to fall back to the SPEECH_TO_TEXT_USERNAME and
-  // SPEECH_TO_TEXT_PASSWORD environment properties, and then to VCAP_SERVICES (on Bluemix)
   username: process.env.STT_SERVICE_USER,
   password: process.env.STT_SERVICE_PW,
 });
