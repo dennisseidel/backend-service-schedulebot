@@ -78,6 +78,8 @@ io.on('connection', (socket) => {
   // initialize bot context for user and Replace with the context obtained from the initial request
   let context = {};
   let responseText = '';
+  // set userid in context
+  context.userid = '5894ec04d3ab69003a98e746';
 
   io.emit('bot-message', {
     role: 'bot',
@@ -103,11 +105,8 @@ io.on('connection', (socket) => {
         responseText = response.output.text[0];
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
-          // TODO get the customernumber dynamically from client (and instert
-          // it in the function that is called based on the keyword [call_date])
-          const mockCustomerNumber = '5894ec04d3ab69003a98e746';
           // customernumber -> ask for responsible agent
-          axios.get(`${CUSTOMER_ROOT_URL}/customers/${mockCustomerNumber}`)
+          axios.get(`${CUSTOMER_ROOT_URL}/customers/${context.userid}`)
           .then((resCustomer) => {
             const responsibleAgentId = resCustomer.data.customer.centralagentid;
             // agendid -> find the right time for the responsible agent
