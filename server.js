@@ -8,6 +8,8 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const watson = require('watson-developer-cloud');
 const cors = require('cors');
+const socketioJwt = require('socketio-jwt');
+const fs = require('fs');
 const { findNextFreeTimeSlot } = require('./modules/calender');
 
 const port = process.env.PORT || 3000;
@@ -70,8 +72,12 @@ const conversation = new Conversation({
   version_date: '2016-12-29',
 });
 
-
-io.on('connection', (socket) => {
+const key = fs.readFileSync(`${__dirname}/public.pem`);
+io.on('connection', socketioJwt.authorize({
+  secret: key,
+  timeout: 15000, // 15 seconds to send the authentication message
+})).on('authenticated', (socket) => {
+    // this socket is authenticated, we are good to handle more events from it.
   console.log('a user connected');
   // initialize bot context for user and Replace with the context obtained from the initial request
   let context = {};
