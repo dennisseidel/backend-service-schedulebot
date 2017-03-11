@@ -83,7 +83,7 @@ io.on('connection', socketioJwt.authorize({
   let context = {};
   let responseText = '';
   // set userid in context
-  context.userid = '5894ec04d3ab69003a98e746';
+  context.userid = socket.decoded_token.email;
 
   io.emit('bot-message', {
     role: 'bot',
