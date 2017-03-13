@@ -11,6 +11,8 @@ const cors = require('cors');
 const socketioJwt = require('socketio-jwt');
 const fs = require('fs');
 const { findNextFreeTimeSlot } = require('./modules/calender');
+const iot = require('ibmiotf');
+const _ = require('lodash');
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -18,6 +20,13 @@ const server = Server(app);
 const io = socket(server);
 const CUSTOMER_ROOT_URL = process.env.CUSTOMER_ROOT_URL || 'http://localhost:3002';
 const EMPLOYEE_ROOT_URL = process.env.EMPLOYEE_ROOT_URL || 'http://localhost:3001';
+const appClientConfig = {
+  org: '3j3jat',
+  id: 'team-6-backend-2',
+  'auth-key': 'a-3j3jat-vqtqgilelq',
+  'auth-token': 'qGdaWWqjw757xR63SI',
+  'type ': 'shared',
+};
 
 app.use(bodyParser.json());
 app.use(morgan('combined'));
@@ -77,7 +86,9 @@ io.on('connection', socketioJwt.authorize({
   secret: key,
   timeout: 15000, // 15 seconds to send the authentication message
 })).on('authenticated', (socket) => {
-    // this socket is authenticated, we are good to handle more events from it.
+  const appClient = new iot.IotfApplication(appClientConfig);
+  appClient.connect();
+  // this socket is authenticated, we are good to handle more events from it.
   console.log('a user connected');
   // initialize bot context for user and Replace with the context obtained from the initial request
   let context = {};
@@ -91,6 +102,34 @@ io.on('connection', socketioJwt.authorize({
     timestamp: Date.now(),
     context,
   });
+
+  // Predictive Maintanance: triggered by MQTT wait for signals and send a message to the client
+  const getCarStatus = () => {
+    axios.get('http://obd2-car-dashboard-cs.mybluemix.net/cardata/5/summary')
+    .then((result) => {
+      // destionation distance
+      const destionationDistance = 10000;
+      // consumption per 100 km
+      const avgconsumption = result.data.avgconsumption;
+      // liters of fuel left
+      const fuelLeft = result.data.fuel;
+      const reach = _.round((fuelLeft / avgconsumption) * 100, 2);
+      if (reach < destionationDistance) {
+        io.emit('bot-message', {
+          role: 'bot',
+          text: `Adam, in order to reach Munich please drive slower or fill up your tank. Your current reach is only ${reach} km. There is a fuel station in about 5 km.`,
+          timestamp: Date.now(),
+          context,
+        });
+      }
+    });
+  };
+  // setTimeout(getCarStatus, 15000);
+
+  // const predictiveTimer = setInterval(predictiveAlert, 3000);
+  // setTimeout(predictiveAlert, 3000);
+
+
   // wait for chat input
   socket.on('chat-input', (from, msg) => {
     // Start conversation with empty message.
@@ -104,7 +143,6 @@ io.on('connection', socketioJwt.authorize({
         console.error(err);
         return;
       }
-      console.log('MESSAGE:', response);
       // Display the output from dialog, if any.
       if (response.output.text.length !== 0) {
         context = response.context;
@@ -166,6 +204,15 @@ io.on('connection', socketioJwt.authorize({
           })
           .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
         } else {
+          console.log('RESPONSE:', response);
+          try {
+            if (typeof response.entities[0].value !== undefined && response.entities[0].value === 'music') {
+              axios.post('http://obd2-car-dashboard-cs.mybluemix.net/lighton', { id: 4 });
+              setTimeout(getCarStatus, 10000);
+            }
+          } catch (err) {
+            console.log(err);
+          }
           io.emit('bot-message', {
             role: 'bot',
             text: responseText,
