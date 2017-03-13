@@ -27,6 +27,8 @@ const appClientConfig = {
   'auth-token': 'qGdaWWqjw757xR63SI',
   'type ': 'shared',
 };
+const appClient = new iot.IotfApplication(appClientConfig);
+appClient.connect();
 
 app.use(bodyParser.json());
 app.use(morgan('combined'));
@@ -86,8 +88,6 @@ io.on('connection', socketioJwt.authorize({
   secret: key,
   timeout: 15000, // 15 seconds to send the authentication message
 })).on('authenticated', (socket) => {
-  const appClient = new iot.IotfApplication(appClientConfig);
-  appClient.connect();
   // this socket is authenticated, we are good to handle more events from it.
   console.log('a user connected');
   // initialize bot context for user and Replace with the context obtained from the initial request
@@ -121,6 +121,11 @@ io.on('connection', socketioJwt.authorize({
           timestamp: Date.now(),
           context,
         });
+        const myData = JSON.stringify({
+          on: true,
+          hue: 46920,
+        });
+        appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
       }
     });
   };
@@ -133,6 +138,15 @@ io.on('connection', socketioJwt.authorize({
   // wait for chat input
   socket.on('chat-input', (from, msg) => {
     // Start conversation with empty message.
+    console.log('MSG:', msg);
+    if (msg.text.search('occupancy')) {
+      const myData = JSON.stringify({
+        on: true,
+        hue: 0,
+      });
+      appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
+    }
+
     conversation.message(
       {
         workspace_id: 'fb7bb377-e523-439a-88fd-dd1ac0db1dc7',
@@ -207,12 +221,18 @@ io.on('connection', socketioJwt.authorize({
           console.log('RESPONSE:', response);
           try {
             if (typeof response.entities[0].value !== undefined && response.entities[0].value === 'music') {
-              axios.post('http://obd2-car-dashboard-cs.mybluemix.net/lighton', { id: 4 });
+              // axios.post('http://obd2-car-dashboard-cs.mybluemix.net/lighton', { id: 4 });
+              const myData = JSON.stringify({
+                on: true,
+                hue: 22550,
+              });
+              appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
               setTimeout(getCarStatus, 10000);
             }
           } catch (err) {
             console.log(err);
           }
+
           io.emit('bot-message', {
             role: 'bot',
             text: responseText,
