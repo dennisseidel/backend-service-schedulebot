@@ -117,7 +117,7 @@ io.on('connection', socketioJwt.authorize({
       if (reach < destionationDistance) {
         io.emit('bot-message', {
           role: 'bot',
-          text: `Adam, in order to reach Munich please drive slower or fill up your tank. Your current reach is only ${reach} km. There is a fuel station in about 5 km.`,
+          text: `Adam, in order to reach your destination please drive slower or fill up your tank. Your current reach is only ${reach} km. There is a fuel station in about 5 km.`,
           timestamp: Date.now(),
           context,
         });
