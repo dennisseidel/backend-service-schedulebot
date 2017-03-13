@@ -84,25 +84,27 @@ io.on('connection', socketioJwt.authorize({
   let responseText = '';
   // set userid in context
   context.userid = socket.decoded_token.email;
-
+  // emit welcome message
   io.emit('bot-message', {
     role: 'bot',
     text: 'Hi, what can I do for you?',
     timestamp: Date.now(),
+    context,
   });
-
+  // wait for chat input
   socket.on('chat-input', (from, msg) => {
     // Start conversation with empty message.
     conversation.message(
       {
         workspace_id: 'fb7bb377-e523-439a-88fd-dd1ac0db1dc7',
         input: { text: msg.text },
-        context,
+        context: Object.assign({}, context, msg.context),
       }, (err, response) => {
       if (err) {
-        console.error(err); // something went wrong
+        console.error(err);
         return;
       }
+      console.log('MESSAGE:', response);
       // Display the output from dialog, if any.
       if (response.output.text.length !== 0) {
         context = response.context;
@@ -124,6 +126,7 @@ io.on('connection', socketioJwt.authorize({
               // if undefined give a meeting now
               if (typeof employee.nonAvailablility === 'undefined') {
                 nextFreeMeetingTime = moment();
+                context.nextFreeMeetingTime = nextFreeMeetingTime;
                 axios.patch(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}/termin`, {
                   todo: 'fill with something',
                   start: nextFreeMeetingTime,
@@ -132,6 +135,7 @@ io.on('connection', socketioJwt.authorize({
               } else {
                 // with end date after now
                 nextFreeMeetingTime = findNextFreeTimeSlot(employee.nonAvailablility);
+                context.nextFreeMeetingTime = nextFreeMeetingTime;
                 axios.patch(`${EMPLOYEE_ROOT_URL}/employees/${responsibleAgentId}/termin`, {
                   todo: 'fill with something',
                   start: nextFreeMeetingTime,
@@ -142,7 +146,12 @@ io.on('connection', socketioJwt.authorize({
 
               if (/\$\[reschedule_call_date\]/i.test(responseText)) {
                 console.log('get the old time, slice the calender with old time + 1 day or some setoff provided by the user');
+                context.nextFreeMeetingTime = context.nextFreeMeetingTime.clone().add(21, 'h');
+                responseText = responseText
+                             .replace(/\$\[reschedule_call_date\]/i, `${context.nextFreeMeetingTime.get('date')}.${context.nextFreeMeetingTime.get('month') + 1}.${context.nextFreeMeetingTime.get('year')}`)
+                             .replace(/\$\[reschedule_call_time\]/i, `${context.nextFreeMeetingTime.get('hours')}:${context.nextFreeMeetingTime.get('minutes')}`);
               }
+              // check if the last one was an #agree then make the time fixed
               // schedule meeting by proposing time to user
               responseText = responseText
                              .replace(/\$\[call_date\]/i, `${nextFreeMeetingTime.get('date')}.${nextFreeMeetingTime.get('month') + 1}.${nextFreeMeetingTime.get('year')}`)
@@ -151,6 +160,7 @@ io.on('connection', socketioJwt.authorize({
                 role: 'bot',
                 text: responseText,
                 timestamp: Date.now(),
+                context,
               });
             });
           })
@@ -160,6 +170,7 @@ io.on('connection', socketioJwt.authorize({
             role: 'bot',
             text: responseText,
             timestamp: Date.now(),
+            context,
           });
         }
       }
