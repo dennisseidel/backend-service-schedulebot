@@ -22,7 +22,7 @@ const CUSTOMER_ROOT_URL = process.env.CUSTOMER_ROOT_URL || 'http://localhost:300
 const EMPLOYEE_ROOT_URL = process.env.EMPLOYEE_ROOT_URL || 'http://localhost:3001';
 const appClientConfig = {
   org: '3j3jat',
-  id: 'team-6-backend-2',
+  id: 'team-6-backend-3',
   'auth-key': 'a-3j3jat-vqtqgilelq',
   'auth-token': 'qGdaWWqjw757xR63SI',
   'type ': 'shared',
@@ -126,6 +126,13 @@ io.on('connection', socketioJwt.authorize({
           hue: 46920,
         });
         appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
+        setTimeout(() => {
+          const myData = JSON.stringify({
+            on: true,
+            hue: 0,
+          });
+          appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
+        }, 10000);
       }
     });
   };
@@ -161,6 +168,23 @@ io.on('connection', socketioJwt.authorize({
       if (response.output.text.length !== 0) {
         context = response.context;
         responseText = response.output.text[0];
+        if (/\[drive_now\]/i.test(responseText)) {
+          console.log('TEST');
+          return axios.get('https://api2.drive-now.com/cities/4604/cars', {
+            headers: { 'X-Api-Key': 'adf51226795afbc4e7575ccc124face7' },
+          })
+            .then((response) => {
+              const responseNewText = `There are ${response.data.count} vehicles in Munich. The nearest is at: ${response.data.items[0].address[0]} and the price is ${response.data.items[0].rentalPrice.drivePrice.formattedPrice}`;
+              // .replace(/\[drive_now\]/i, 'something');
+              console.log('responseText:', responseText);
+              io.emit('bot-message', {
+                role: 'bot',
+                text: responseNewText,
+                timestamp: Date.now(),
+                context,
+              });
+            });
+        }
         // call function that finds open keywords
         if (/\$\[/.test(responseText)) {
           // customernumber -> ask for responsible agent
@@ -218,7 +242,6 @@ io.on('connection', socketioJwt.authorize({
           })
           .catch(getCustomerErr => console.log('ERROR:', getCustomerErr));
         } else {
-          console.log('RESPONSE:', response);
           try {
             if (typeof response.entities[0].value !== undefined && response.entities[0].value === 'music') {
               // axios.post('http://obd2-car-dashboard-cs.mybluemix.net/lighton', { id: 4 });
@@ -232,7 +255,17 @@ io.on('connection', socketioJwt.authorize({
           } catch (err) {
             console.log(err);
           }
-
+          try {
+            if (response.intents[0].intent === 'turn_on' && response.entities[0].value === 'car') {
+              const myData = JSON.stringify({
+                on: true,
+                hue: 22550,
+              });
+              appClient.publishDeviceCommand('hueLight', 'hueLight461B987', 'action', 'json', myData);
+            }
+          } catch (err) {
+            console.log(err);
+          }
           io.emit('bot-message', {
             role: 'bot',
             text: responseText,
